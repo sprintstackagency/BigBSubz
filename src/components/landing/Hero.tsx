@@ -5,34 +5,38 @@ import { ArrowRight, Check } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="relative py-20 overflow-hidden">
-      {/* Purple gradient backdrop */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-soft-purple/20 to-transparent pointer-events-none" />
+    <section className="relative py-20 overflow-hidden" style={{ 
+      backgroundImage: `url('https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=5760&q=80')`,
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+    }}>
+      {/* Purple gradient overlay */}
+      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-purple/60 to-primary-purple/30 backdrop-blur-sm pointer-events-none" />
       
       {/* Glass circles for background effect */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-light-purple/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-purple/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-purple/20 rounded-full blur-3xl pointer-events-none" />
       
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8">
+          <div className="space-y-8 text-white">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                Nigeria's Premier <span className="bg-gradient-to-r from-primary-purple to-secondary-purple bg-clip-text text-transparent">Virtual Top-up</span> Platform
+                Nigeria's Premier <span className="bg-gradient-to-r from-white to-primary-light-purple bg-clip-text text-transparent">Virtual Top-up</span> Platform
               </h1>
-              <p className="text-lg md:text-xl text-gray-600 max-w-lg">
+              <p className="text-lg md:text-xl text-white/90 max-w-lg">
                 Recharge airtime, buy data, pay electricity bills, and subscribe to your favorite TV channels - all in one place.
               </p>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/register">
-                <Button size="lg" className="bg-primary-purple hover:bg-primary-purple/90">
+                <Button size="lg" className="bg-white text-primary-purple hover:bg-white/90">
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/services">
-                <Button size="lg" variant="outline" className="border-primary-purple text-primary-purple hover:bg-primary-purple/10">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
                   Explore Services
                 </Button>
               </Link>
@@ -40,16 +44,16 @@ const Hero = () => {
             
             <div className="flex flex-wrap gap-x-8 gap-y-4">
               <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span className="text-gray-600">Fast & Secure</span>
+                <Check className="h-5 w-5 text-green-300 mr-2" />
+                <span className="text-white/90">Fast & Secure</span>
               </div>
               <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span className="text-gray-600">24/7 Support</span>
+                <Check className="h-5 w-5 text-green-300 mr-2" />
+                <span className="text-white/90">24/7 Support</span>
               </div>
               <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-500 mr-2" />
-                <span className="text-gray-600">Best Rates</span>
+                <Check className="h-5 w-5 text-green-300 mr-2" />
+                <span className="text-white/90">Best Rates</span>
               </div>
             </div>
           </div>

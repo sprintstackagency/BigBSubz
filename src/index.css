@@ -92,20 +92,25 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image: url('https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=5760&q=80');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
   }
 }
 
 @layer utilities {
   .glass-morphism {
-    @apply backdrop-blur-md bg-white/20 border border-white/30 shadow-lg;
+    @apply backdrop-blur-xl bg-white/10 border border-white/30 shadow-lg;
   }
   
   .glass-card {
-    @apply bg-white/30 backdrop-blur-md border border-white/30 shadow-lg rounded-2xl;
+    @apply backdrop-blur-xl bg-white/20 border border-white/30 shadow-lg rounded-2xl;
   }
   
   .glass-card-dark {
-    @apply bg-black/30 backdrop-blur-md border border-white/10 shadow-lg rounded-2xl;
+    @apply backdrop-blur-xl bg-black/20 border border-white/10 shadow-lg rounded-2xl;
   }
   
   .card-hover {
