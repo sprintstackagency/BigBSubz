@@ -9,7 +9,261 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      cable_packages: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string
+          description: string | null
+          duration: string
+          id: string
+          name: string
+          provider_id: string
+          status: boolean | null
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string
+          description?: string | null
+          duration: string
+          id?: string
+          name: string
+          provider_id: string
+          status?: boolean | null
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string
+          description?: string | null
+          duration?: string
+          id?: string
+          name?: string
+          provider_id?: string
+          status?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cable_packages_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "cable_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cable_providers: {
+        Row: {
+          api_balance: number | null
+          code: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          status: boolean | null
+        }
+        Insert: {
+          api_balance?: number | null
+          code: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          status?: boolean | null
+        }
+        Update: {
+          api_balance?: number | null
+          code?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          status?: boolean | null
+        }
+        Relationships: []
+      }
+      data_plans: {
+        Row: {
+          amount: number
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          provider_id: string
+          status: boolean | null
+          validity: string
+        }
+        Insert: {
+          amount: number
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          provider_id: string
+          status?: boolean | null
+          validity: string
+        }
+        Update: {
+          amount?: number
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          provider_id?: string
+          status?: boolean | null
+          validity?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "data_plans_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "network_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      electricity_providers: {
+        Row: {
+          api_balance: number | null
+          code: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          status: boolean | null
+        }
+        Insert: {
+          api_balance?: number | null
+          code: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          status?: boolean | null
+        }
+        Update: {
+          api_balance?: number | null
+          code?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          status?: boolean | null
+        }
+        Relationships: []
+      }
+      network_providers: {
+        Row: {
+          api_balance: number | null
+          code: string
+          created_at: string
+          id: string
+          logo_url: string | null
+          name: string
+          status: boolean | null
+        }
+        Insert: {
+          api_balance?: number | null
+          code: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name: string
+          status?: boolean | null
+        }
+        Update: {
+          api_balance?: number | null
+          code?: string
+          created_at?: string
+          id?: string
+          logo_url?: string | null
+          name?: string
+          status?: boolean | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          balance: number
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          details: Json | null
+          id: string
+          provider: string | null
+          recipient: string | null
+          reference: string
+          status: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          details?: Json | null
+          id?: string
+          provider?: string | null
+          recipient?: string | null
+          reference: string
+          status?: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          details?: Json | null
+          id?: string
+          provider?: string | null
+          recipient?: string | null
+          reference?: string
+          status?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transactions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
