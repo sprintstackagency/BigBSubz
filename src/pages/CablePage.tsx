@@ -104,7 +104,8 @@ const CablePage = () => {
       if (sessionError) throw sessionError;
       
       // Call the cable subscription edge function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/pay-cable`, {
+      const functionUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqcbotozmhvaspkqiaik.supabase.co';
+      const response = await fetch(`${functionUrl}/functions/v1/pay-cable`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

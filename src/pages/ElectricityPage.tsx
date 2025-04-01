@@ -91,7 +91,8 @@ const ElectricityPage = () => {
       if (sessionError) throw sessionError;
       
       // Call the electricity payment edge function
-      const response = await fetch(`${supabase.supabaseUrl}/functions/v1/pay-electricity`, {
+      const functionUrl = import.meta.env.VITE_SUPABASE_URL || 'https://iqcbotozmhvaspkqiaik.supabase.co';
+      const response = await fetch(`${functionUrl}/functions/v1/pay-electricity`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
