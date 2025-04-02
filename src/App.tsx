@@ -29,6 +29,9 @@ import Pricing from "./pages/Pricing";
 import About from "./pages/About";
 import Contact from "./pages/Contact";
 import Unauthorized from "./pages/Unauthorized";
+import TransactionsPage from "./pages/TransactionsPage";
+import SettingsPage from "./pages/SettingsPage";
+import AdminSettingsPage from "./pages/AdminSettingsPage";
 
 const queryClient = new QueryClient();
 
@@ -60,7 +63,8 @@ const App = () => (
                   <Route path="/dashboard/wallet" element={<WalletPage />} />
                   <Route path="/dashboard/electricity" element={<ElectricityPage />} />
                   <Route path="/dashboard/cable" element={<CablePage />} />
-                  {/* Add other customer routes here */}
+                  <Route path="/dashboard/transactions" element={<TransactionsPage />} />
+                  <Route path="/dashboard/settings" element={<SettingsPage />} />
                 </Route>
               </Route>
               
@@ -71,7 +75,7 @@ const App = () => (
                   <Route path="/admin/users" element={<AdminUsersPage />} />
                   <Route path="/admin/transactions" element={<AdminTransactionsPage />} />
                   <Route path="/admin/api-balance" element={<AdminAPIBalancePage />} />
-                  {/* Add other admin routes here */}
+                  <Route path="/admin/settings" element={<AdminSettingsPage />} />
                 </Route>
               </Route>
               

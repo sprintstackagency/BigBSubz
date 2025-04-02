@@ -32,14 +32,14 @@ export default {
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
-          purple: '#8a6ef0', // Deeper purple (increased saturation)
-          'light-purple': '#C4A9FF', // Deeper light purple
-          'soft-purple': '#D8CCFF', // Deeper soft purple
+          purple: '#7F49F7', // Deeper purple (increased saturation)
+          'light-purple': '#B68AFF', // Deeper light purple
+          'soft-purple': '#D0BCFF', // Deeper soft purple
         },
         secondary: {
           DEFAULT: 'hsl(var(--secondary))',
           foreground: 'hsl(var(--secondary-foreground))',
-          purple: '#6F5998', // Deeper secondary purple
+          purple: '#6345B5', // Deeper secondary purple
         },
         destructive: {
           DEFAULT: 'hsl(var(--destructive))',

@@ -2,6 +2,8 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
@@ -17,50 +19,97 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
-  // Check if user is authenticated on mount
+  // Check if user is authenticated on mount and setup listener for auth changes
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        // In a real implementation, this would call to your Supabase auth
-        // For now, we'll check localStorage for demo purposes
-        const storedUser = localStorage.getItem('bigbsubz_user');
-        
-        if (storedUser) {
-          setUser(JSON.parse(storedUser));
+    // Set up auth state listener first
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, currentSession) => {
+        setSession(currentSession);
+        if (currentSession?.user) {
+          // Fetch user profile after brief timeout to prevent deadlock
+          setTimeout(async () => {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', currentSession.user.id)
+              .single();
+              
+            if (data) {
+              const userWithProfile: User = {
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                name: data.name || '',
+                role: data.role as UserRole,
+                balance: data.balance || 0,
+                createdAt: data.created_at,
+              };
+              setUser(userWithProfile);
+            } else {
+              console.error("Failed to fetch user profile:", error);
+              setUser(null);
+            }
+          }, 0);
+        } else {
+          setUser(null);
         }
-      } catch (error) {
-        console.error("Authentication error:", error);
-      } finally {
         setIsLoading(false);
       }
-    };
+    );
 
-    checkAuth();
+    // Then check for existing session
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      setSession(currentSession);
+      if (currentSession?.user) {
+        // Fetch user profile
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', currentSession.user.id)
+          .single()
+          .then(({ data, error }) => {
+            if (data) {
+              const userWithProfile: User = {
+                id: currentSession.user.id,
+                email: currentSession.user.email || '',
+                name: data.name || '',
+                role: data.role as UserRole,
+                balance: data.balance || 0,
+                createdAt: data.created_at,
+              };
+              setUser(userWithProfile);
+            } else {
+              console.error("Failed to fetch user profile:", error);
+              setUser(null);
+            }
+            setIsLoading(false);
+          });
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // In a real implementation, this would call to your Supabase auth
-      // For demo purposes, we'll simulate a successful login
-      const mockUser: User = {
-        id: "user-" + Math.random().toString(36).substring(2, 9),
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
-        name: email.split('@')[0],
-        role: email.includes('admin') ? 'admin' : 'customer',
-        balance: 1000,
-        createdAt: new Date().toISOString(),
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('bigbsubz_user', JSON.stringify(mockUser));
+        password,
+      });
+
+      if (error) throw error;
       
       toast({
         title: "Login successful",
-        description: `Welcome back, ${mockUser.name || mockUser.email}!`,
+        description: `Welcome back!`,
       });
     } catch (error: any) {
       toast({
@@ -77,23 +126,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const register = async (email: string, password: string, name: string) => {
     setIsLoading(true);
     try {
-      // In a real implementation, this would call to your Supabase auth
-      // For demo purposes, we'll simulate a successful registration
-      const mockUser: User = {
-        id: "user-" + Math.random().toString(36).substring(2, 9),
+      const { data, error } = await supabase.auth.signUp({
         email,
-        name,
-        role: 'customer',
-        balance: 0,
-        createdAt: new Date().toISOString(),
-      };
-      
-      setUser(mockUser);
-      localStorage.setItem('bigbsubz_user', JSON.stringify(mockUser));
+        password,
+        options: {
+          data: {
+            name,
+          },
+        },
+      });
+
+      if (error) throw error;
       
       toast({
         title: "Registration successful",
-        description: `Welcome to BigBSubz, ${name || email}!`,
+        description: `Welcome to BigBSubz!`,
       });
     } catch (error: any) {
       toast({
@@ -109,9 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const logout = async () => {
     try {
-      // In a real implementation, this would call to your Supabase auth
-      localStorage.removeItem('bigbsubz_user');
-      setUser(null);
+      await supabase.auth.signOut();
       
       toast({
         title: "Logged out",
@@ -130,10 +175,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user) return;
     
     try {
-      // In a real implementation, this would call to your Supabase
-      const updatedUser = { ...user, ...userData };
-      setUser(updatedUser);
-      localStorage.setItem('bigbsubz_user', JSON.stringify(updatedUser));
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: userData.name,
+        })
+        .eq('id', user.id);
+      
+      if (error) throw error;
+      
+      setUser(prev => prev ? { ...prev, ...userData } : null);
       
       toast({
         title: "Profile updated",

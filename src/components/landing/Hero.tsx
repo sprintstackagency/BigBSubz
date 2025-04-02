@@ -5,35 +5,27 @@ import { ArrowRight, Check } from "lucide-react";
 
 const Hero = () => {
   return (
-    <section className="relative py-20 overflow-hidden" style={{ 
-      backgroundImage: `url('https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=6052&q=80')`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-    }}>
-      {/* Glass circles for background effect - removed purple overlay */}
-      <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-light-purple/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-purple/20 rounded-full blur-3xl pointer-events-none" />
-      
+    <section className="relative py-20 overflow-hidden bg-gradient-to-b from-white to-gray-50">
       <div className="container mx-auto px-4 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-          <div className="space-y-8 text-white">
+          <div className="space-y-8">
             <div className="space-y-4">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-                Nigeria's Premier <span className="bg-gradient-to-r from-white to-primary-light-purple bg-clip-text text-transparent">Virtual Top-up</span> Platform
+                Nigeria's Premier <span className="bg-gradient-to-r from-primary-purple to-secondary-purple bg-clip-text text-transparent">Virtual Top-up</span> Platform
               </h1>
-              <p className="text-lg md:text-xl text-white/90 max-w-lg">
+              <p className="text-lg md:text-xl text-gray-600 max-w-lg">
                 Recharge airtime, buy data, pay electricity bills, and subscribe to your favorite TV channels - all in one place.
               </p>
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
               <Link to="/register">
-                <Button size="lg" className="bg-white text-primary-purple hover:bg-white/90">
+                <Button size="lg" className="bg-primary-purple hover:bg-primary-purple/90 text-white">
                   Get Started <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
               <Link to="/services">
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/10">
+                <Button size="lg" variant="outline" className="border-primary-purple text-primary-purple hover:bg-primary-purple/10">
                   Explore Services
                 </Button>
               </Link>
@@ -41,29 +33,27 @@ const Hero = () => {
             
             <div className="flex flex-wrap gap-x-8 gap-y-4">
               <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-300 mr-2" />
-                <span className="text-white/90">Fast & Secure</span>
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span className="text-gray-700">Fast & Secure</span>
               </div>
               <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-300 mr-2" />
-                <span className="text-white/90">24/7 Support</span>
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span className="text-gray-700">24/7 Support</span>
               </div>
               <div className="flex items-center">
-                <Check className="h-5 w-5 text-green-300 mr-2" />
-                <span className="text-white/90">Best Rates</span>
+                <Check className="h-5 w-5 text-green-500 mr-2" />
+                <span className="text-gray-700">Best Rates</span>
               </div>
             </div>
           </div>
           
           <div className="rounded-xl overflow-hidden shadow-xl">
-            <div className="glass-card p-6">
-              <div className="rounded-xl overflow-hidden bg-white/80 backdrop-blur shadow-inner">
-                <img
-                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=7952&q=80"
-                  alt="Mobile payment application"
-                  className="w-full h-auto object-cover"
-                />
-              </div>
+            <div className="p-2 bg-white rounded-xl shadow-inner">
+              <img
+                src="https://images.unsplash.com/photo-1556656793-08538906a9f8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+                alt="People using mobile phones for payments"
+                className="w-full h-auto object-cover rounded-lg"
+              />
             </div>
           </div>
         </div>
