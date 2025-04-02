@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -16,9 +15,16 @@ const RegisterForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  const { register } = useAuth();
+  const { register, isAuthenticated, user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      const redirectPath = user.role === "admin" ? "/admin" : "/dashboard";
+      navigate(redirectPath, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +60,6 @@ const RegisterForm = () => {
         description: error.message || "Please try again with a different email",
         variant: "destructive",
       });
-    } finally {
       setIsLoading(false);
     }
   };

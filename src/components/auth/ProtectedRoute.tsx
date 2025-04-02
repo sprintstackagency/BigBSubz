@@ -23,10 +23,12 @@ const ProtectedRoute = ({
   }
   
   if (!isAuthenticated) {
+    console.log("User not authenticated. Redirecting to:", redirectPath);
     return <Navigate to={redirectPath} replace />;
   }
   
   if (user && !allowedRoles.includes(user.role)) {
+    console.log("User doesn't have required role. Redirecting to unauthorized.");
     return <Navigate to="/unauthorized" replace />;
   }
   
