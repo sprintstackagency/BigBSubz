@@ -51,8 +51,8 @@ const App = () => (
               <Route path="/contact" element={<Contact />} />
               <Route path="/unauthorized" element={<Unauthorized />} />
               
-              {/* Customer Protected Routes */}
-              <Route element={<ProtectedRoute allowedRoles={["customer"]} />}>
+              {/* Customer Protected Routes - Allow both customer and admin roles */}
+              <Route element={<ProtectedRoute allowedRoles={["customer", "admin"]} />}>
                 <Route element={<DashboardLayout />}>
                   <Route path="/dashboard" element={<CustomerDashboardPage />} />
                   <Route path="/dashboard/airtime" element={<AirtimePage />} />

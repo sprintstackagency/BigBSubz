@@ -6,7 +6,7 @@ import { ArrowRight, Check } from "lucide-react";
 const Hero = () => {
   return (
     <section className="relative py-20 overflow-hidden" style={{ 
-      backgroundImage: `url('https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1987&q=80')`,
+      backgroundImage: `url('https://images.unsplash.com/photo-1605810230434-7631ac76ec81?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=6052&q=80')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}>
@@ -59,8 +59,8 @@ const Hero = () => {
             <div className="glass-card p-6">
               <div className="rounded-xl overflow-hidden bg-white/80 backdrop-blur shadow-inner">
                 <img
-                  src="https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=987&q=80"
-                  alt="Mobile phone with payment application"
+                  src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=7952&q=80"
+                  alt="Mobile payment application"
                   className="w-full h-auto object-cover"
                 />
               </div>
