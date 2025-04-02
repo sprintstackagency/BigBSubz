@@ -6,14 +6,11 @@ import { ArrowRight, Check } from "lucide-react";
 const Hero = () => {
   return (
     <section className="relative py-20 overflow-hidden" style={{ 
-      backgroundImage: `url('https://images.unsplash.com/photo-1487058792275-0ad4aaf24ca7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=5760&q=80')`,
+      backgroundImage: `url('https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1987&q=80')`,
       backgroundSize: 'cover',
       backgroundPosition: 'center',
     }}>
-      {/* Purple gradient overlay */}
-      <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-primary-purple/60 to-primary-purple/30 backdrop-blur-sm pointer-events-none" />
-      
-      {/* Glass circles for background effect */}
+      {/* Glass circles for background effect - removed purple overlay */}
       <div className="absolute -top-40 -right-40 w-96 h-96 bg-primary-light-purple/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-primary-purple/20 rounded-full blur-3xl pointer-events-none" />
       
