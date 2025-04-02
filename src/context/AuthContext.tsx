@@ -28,69 +28,86 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, currentSession) => {
+        console.log("Auth state changed:", event, currentSession?.user?.id);
         setSession(currentSession);
+        
         if (currentSession?.user) {
           // Fetch user profile after brief timeout to prevent deadlock
           setTimeout(async () => {
-            const { data, error } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', currentSession.user.id)
-              .single();
-              
-            if (data) {
-              const userWithProfile: User = {
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: data.name || '',
-                role: data.role as UserRole,
-                balance: data.balance || 0,
-                createdAt: data.created_at,
-              };
-              setUser(userWithProfile);
-            } else {
-              console.error("Failed to fetch user profile:", error);
-              setUser(null);
+            try {
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', currentSession.user.id)
+                .single();
+                
+              if (data) {
+                console.log("Profile data fetched:", data);
+                const userWithProfile: User = {
+                  id: currentSession.user.id,
+                  email: currentSession.user.email || '',
+                  name: data.name || '',
+                  role: data.role as UserRole,
+                  balance: data.balance || 0,
+                  createdAt: data.created_at,
+                };
+                setUser(userWithProfile);
+              } else if (error) {
+                console.error("Failed to fetch user profile:", error);
+                setUser(null);
+              }
+            } catch (err) {
+              console.error("Error fetching profile:", err);
+            } finally {
+              setIsLoading(false);
             }
           }, 0);
         } else {
           setUser(null);
+          setIsLoading(false);
         }
-        setIsLoading(false);
       }
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      setSession(currentSession);
-      if (currentSession?.user) {
-        // Fetch user profile
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', currentSession.user.id)
-          .single()
-          .then(({ data, error }) => {
-            if (data) {
-              const userWithProfile: User = {
-                id: currentSession.user.id,
-                email: currentSession.user.email || '',
-                name: data.name || '',
-                role: data.role as UserRole,
-                balance: data.balance || 0,
-                createdAt: data.created_at,
-              };
-              setUser(userWithProfile);
-            } else {
-              console.error("Failed to fetch user profile:", error);
-              setUser(null);
-            }
-            setIsLoading(false);
-          });
-      } else {
+    const checkSession = async () => {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        console.log("Initial session check:", currentSession?.user?.id);
+        
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentSession.user.id)
+            .single();
+          
+          if (data) {
+            console.log("Initial profile data:", data);
+            const userWithProfile: User = {
+              id: currentSession.user.id,
+              email: currentSession.user.email || '',
+              name: data.name || '',
+              role: data.role as UserRole,
+              balance: data.balance || 0,
+              createdAt: data.created_at,
+            };
+            setUser(userWithProfile);
+          } else {
+            console.error("Failed to fetch initial user profile:", error);
+            setUser(null);
+          }
+        }
+      } catch (err) {
+        console.error("Session check error:", err);
+      } finally {
         setIsLoading(false);
       }
-    });
+    };
+    
+    checkSession();
 
     return () => {
       subscription.unsubscribe();
@@ -143,6 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         description: `Welcome to BigBSubz!`,
       });
     } catch (error: any) {
+      console.error("Registration error in context:", error);
       toast({
         title: "Registration failed",
         description: error.message || "Please try again with a different email",

@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
+import { useToast } from "@/components/ui/use-toast";
 
 const RegisterForm = () => {
   const [name, setName] = useState("");
@@ -16,6 +18,7 @@ const RegisterForm = () => {
   const [error, setError] = useState("");
   const { register } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,20 +29,38 @@ const RegisterForm = () => {
       return;
     }
 
+    if (password.length < 6) {
+      setError("Password must be at least 6 characters");
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await register(email, password, name);
+      toast({
+        title: "Account created successfully",
+        description: "Welcome to BigBSubz!",
+      });
       navigate("/dashboard");
     } catch (error: any) {
-      setError(error.message || "Registration failed. Please try again.");
+      console.error("Registration error:", error);
+      setError(
+        error.message || 
+        "Registration failed. Please try again with a different email."
+      );
+      toast({
+        title: "Registration failed",
+        description: error.message || "Please try again with a different email",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <Card className="w-full max-w-md mx-auto glass-card">
+    <Card className="w-full max-w-md mx-auto shadow-md">
       <CardHeader>
         <CardTitle className="text-center text-2xl">Create an Account</CardTitle>
         <CardDescription className="text-center">
@@ -97,7 +118,14 @@ const RegisterForm = () => {
             className="w-full bg-primary-purple hover:bg-primary-purple/90"
             disabled={isLoading}
           >
-            {isLoading ? "Creating account..." : "Register"}
+            {isLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Creating account...
+              </>
+            ) : (
+              "Register"
+            )}
           </Button>
         </form>
       </CardContent>
