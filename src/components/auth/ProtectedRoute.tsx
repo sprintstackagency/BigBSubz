@@ -14,13 +14,16 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, isLoading, isAuthenticated } = useAuth();
   
-  console.log("ProtectedRoute - Auth State:", { isAuthenticated, isLoading, user });
+  console.log("ProtectedRoute - Auth State:", { isAuthenticated, isLoading, user, allowedRoles });
   
   // Show loading state while auth is being checked
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
-        <Loader2 className="h-8 w-8 animate-spin text-primary-purple" />
+        <div className="flex flex-col items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-primary-purple mb-4" />
+          <p className="text-gray-600">Authenticating...</p>
+        </div>
       </div>
     );
   }

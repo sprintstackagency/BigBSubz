@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
@@ -25,12 +26,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Helper function to fetch user profile
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
         
+      if (error) {
+        console.error("Failed to fetch user profile:", error);
+        setUser(null);
+        return null;
+      }
+      
       if (data) {
         console.log("Profile data fetched successfully:", data);
         const userWithProfile: User = {
@@ -43,10 +51,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
         setUser(userWithProfile);
         return userWithProfile;
-      } else if (error) {
-        console.error("Failed to fetch user profile:", error);
-        setUser(null);
-        return null;
       }
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -56,6 +60,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Check if user is authenticated on mount and setup listener for auth changes
   useEffect(() => {
+    console.log("Setting up auth state listener");
+    
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
@@ -65,10 +71,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (currentSession?.user) {
           setIsLoading(true);
           try {
-            const userProfile = await fetchUserProfile(currentSession.user.id);
-            if (userProfile) {
-              console.log("User authenticated after state change:", userProfile);
-            }
+            await fetchUserProfile(currentSession.user.id);
+          } catch (error) {
+            console.error("Error during profile fetch after auth state change:", error);
+            setUser(null);
           } finally {
             setIsLoading(false);
           }
@@ -81,6 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Then check for existing session
     const checkSession = async () => {
+      console.log("Checking for existing session");
+      setIsLoading(true);
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         console.log("Initial session check:", currentSession?.user?.id);
@@ -88,15 +96,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         
         if (currentSession?.user) {
-          try {
-            await fetchUserProfile(currentSession.user.id);
-          } catch (err) {
-            console.error("Initial profile fetch error:", err);
-            setUser(null);
-          }
+          await fetchUserProfile(currentSession.user.id);
+        } else {
+          setUser(null);
         }
       } catch (err) {
         console.error("Session check error:", err);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
@@ -112,19 +118,30 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setIsLoading(true);
     try {
+      console.log("Attempting login for:", email);
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Login error:", error);
+        throw error;
+      }
       
-      // Don't need to manually fetch profile here as the auth listener will handle it
+      console.log("Login successful, session:", data.session);
+      
+      // Fetching profile data immediately after successful login
+      if (data.session?.user) {
+        await fetchUserProfile(data.session.user.id);
+      }
+      
       toast({
         title: "Login successful",
         description: `Welcome back!`,
       });
     } catch (error: any) {
+      console.error("Login failed:", error.message);
       toast({
         title: "Login failed",
         description: error.message || "Please check your credentials and try again",
@@ -132,7 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       throw error;
     } finally {
-      // We'll let the auth state change handler set isLoading to false
+      setIsLoading(false);
     }
   };
 
@@ -171,6 +188,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await supabase.auth.signOut();
+      setUser(null);
+      setSession(null);
       
       toast({
         title: "Logged out",
@@ -212,6 +231,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     }
   };
+
+  console.log("Auth context state:", { isAuthenticated: !!user && !!session, isLoading, user });
 
   return (
     <AuthContext.Provider

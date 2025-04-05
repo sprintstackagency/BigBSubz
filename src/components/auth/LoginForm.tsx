@@ -21,6 +21,7 @@ const LoginForm = () => {
     if (!isLoading && isAuthenticated && user) {
       console.log("LoginForm - User authenticated, redirecting to dashboard", user);
       const redirectPath = user.role === "admin" ? "/admin" : "/dashboard";
+      console.log("Redirecting to:", redirectPath);
       navigate(redirectPath, { replace: true });
     }
   }, [isAuthenticated, user, navigate, isLoading]);
@@ -31,10 +32,12 @@ const LoginForm = () => {
     setFormLoading(true);
 
     try {
+      console.log("Submitting login form for:", email);
       await login(email, password);
       console.log("Login submitted successfully");
       // Login success - the auth state change will trigger the useEffect for redirect
     } catch (error: any) {
+      console.error("Login form error:", error.message);
       setError(error.message || "Failed to login. Please check your credentials.");
     } finally {
       setFormLoading(false);
@@ -82,12 +85,12 @@ const LoginForm = () => {
           <Button 
             type="submit" 
             className="w-full bg-primary-purple hover:bg-primary-purple/90"
-            disabled={formLoading}
+            disabled={formLoading || isLoading}
           >
-            {formLoading ? (
+            {formLoading || isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Logging in...
+                {formLoading ? "Logging in..." : "Loading..."}
               </>
             ) : "Login"}
           </Button>
