@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { debugAuth } from "@/integrations/supabase/client";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
@@ -15,6 +16,12 @@ const LoginForm = () => {
   const [error, setError] = useState("");
   const { login, isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
+
+  // Debug auth state when component mounts
+  useEffect(() => {
+    debugAuth();
+    console.log("LoginForm mounted, auth state:", { isAuthenticated, isLoading, user });
+  }, []);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -35,6 +42,8 @@ const LoginForm = () => {
       console.log("Submitting login form for:", email);
       await login(email, password);
       console.log("Login submitted successfully");
+      // Debug auth state after login
+      debugAuth();
       // Login success - the auth state change will trigger the useEffect for redirect
     } catch (error: any) {
       console.error("Login form error:", error.message);

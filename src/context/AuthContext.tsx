@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, debugAuth } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -24,7 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   // Helper function to fetch user profile
-  const fetchUserProfile = async (userId: string) => {
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
       console.log("Fetching profile for user:", userId);
       const { data, error } = await supabase
@@ -35,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) {
         console.error("Failed to fetch user profile:", error);
-        setUser(null);
         return null;
       }
       
@@ -52,6 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(userWithProfile);
         return userWithProfile;
       }
+      return null;
     } catch (err) {
       console.error("Error fetching profile:", err);
       return null;
@@ -61,56 +60,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check if user is authenticated on mount and setup listener for auth changes
   useEffect(() => {
     console.log("Setting up auth state listener");
+    let isMounted = true;
+    setIsLoading(true);
+    
+    // Separate function to handle session changes to avoid infinite loops
+    const handleAuthChange = (currentSession: Session | null) => {
+      if (!isMounted) return;
+      
+      console.log("Auth change handler called with session:", !!currentSession);
+      setSession(currentSession);
+      
+      if (currentSession?.user) {
+        // Use timeout to prevent potential recursion issues
+        setTimeout(() => {
+          if (isMounted) {
+            fetchUserProfile(currentSession.user.id)
+              .catch(error => console.error("Error during profile fetch:", error))
+              .finally(() => isMounted && setIsLoading(false));
+          }
+        }, 0);
+      } else {
+        setUser(null);
+        setIsLoading(false);
+      }
+    };
     
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, currentSession) => {
+      (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
-        setSession(currentSession);
+        handleAuthChange(currentSession);
         
-        if (currentSession?.user) {
-          setIsLoading(true);
-          try {
-            await fetchUserProfile(currentSession.user.id);
-          } catch (error) {
-            console.error("Error during profile fetch after auth state change:", error);
-            setUser(null);
-          } finally {
-            setIsLoading(false);
-          }
-        } else {
-          setUser(null);
-          setIsLoading(false);
+        if (event === 'SIGNED_IN') {
+          console.log("User successfully signed in");
+          // Debug auth state
+          debugAuth();
         }
       }
     );
 
     // Then check for existing session
     const checkSession = async () => {
-      console.log("Checking for existing session");
-      setIsLoading(true);
       try {
+        console.log("Checking for existing session");
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         console.log("Initial session check:", currentSession?.user?.id);
         
-        setSession(currentSession);
+        handleAuthChange(currentSession);
         
-        if (currentSession?.user) {
-          await fetchUserProfile(currentSession.user.id);
-        } else {
-          setUser(null);
-        }
+        // Debug auth state
+        debugAuth();
       } catch (err) {
         console.error("Session check error:", err);
-        setUser(null);
-      } finally {
-        setIsLoading(false);
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
       }
     };
     
     checkSession();
 
     return () => {
+      isMounted = false;
       subscription.unsubscribe();
     };
   }, []);
@@ -131,15 +143,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("Login successful, session:", data.session);
       
+      // Setting session immediately to speed up UI updates
+      setSession(data.session);
+      
       // Fetching profile data immediately after successful login
       if (data.session?.user) {
-        await fetchUserProfile(data.session.user.id);
+        const profileData = await fetchUserProfile(data.session.user.id);
+        if (!profileData) {
+          throw new Error("Could not retrieve user profile after login");
+        }
       }
       
       toast({
         title: "Login successful",
         description: `Welcome back!`,
       });
+      
+      // Debug auth state
+      debugAuth();
     } catch (error: any) {
       console.error("Login failed:", error.message);
       toast({
@@ -232,7 +253,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  console.log("Auth context state:", { isAuthenticated: !!user && !!session, isLoading, user });
+  console.log("Auth context state:", { 
+    isAuthenticated: !!user && !!session, 
+    isLoading, 
+    user,
+    sessionExists: !!session
+  });
 
   return (
     <AuthContext.Provider

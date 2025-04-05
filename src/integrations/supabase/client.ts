@@ -10,7 +10,21 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: localStorage,
+    storage: localStorage, 
     flowType: 'pkce',
   }
 });
+
+// Add a debug helper to log auth state
+export const debugAuth = async () => {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+    console.log("Current session:", data.session);
+    console.log("Session error:", error);
+
+    const { data: userData } = await supabase.auth.getUser();
+    console.log("Current user:", userData.user);
+  } catch (err) {
+    console.error("Debug auth error:", err);
+  }
+};

@@ -2,6 +2,8 @@
 import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
+import { useEffect } from "react";
+import { debugAuth } from "@/integrations/supabase/client";
 
 interface ProtectedRouteProps {
   allowedRoles?: Array<"customer" | "admin">;
@@ -14,7 +16,11 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, isLoading, isAuthenticated } = useAuth();
   
-  console.log("ProtectedRoute - Auth State:", { isAuthenticated, isLoading, user, allowedRoles });
+  // Debug auth state on mount and when auth state changes
+  useEffect(() => {
+    debugAuth();
+    console.log("ProtectedRoute - Auth State:", { isAuthenticated, isLoading, user, allowedRoles });
+  }, [isAuthenticated, isLoading, user, allowedRoles]);
   
   // Show loading state while auth is being checked
   if (isLoading) {
