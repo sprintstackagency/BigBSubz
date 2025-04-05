@@ -15,6 +15,7 @@ const Login = () => {
     if (!isLoading && isAuthenticated && user) {
       console.log("Login page - User authenticated, redirecting to dashboard", user);
       const redirectPath = user.role === "admin" ? "/admin" : "/dashboard";
+      console.log("Redirecting to:", redirectPath);
       navigate(redirectPath, { replace: true });
     }
   }, [isAuthenticated, user, navigate, isLoading]);

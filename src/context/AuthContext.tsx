@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
@@ -23,45 +22,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const { toast } = useToast();
 
+  // Helper function to fetch user profile
+  const fetchUserProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+        
+      if (data) {
+        console.log("Profile data fetched successfully:", data);
+        const userWithProfile: User = {
+          id: userId,
+          email: session?.user?.email || '',
+          name: data.name || '',
+          role: data.role as UserRole,
+          balance: data.balance || 0,
+          createdAt: data.created_at,
+        };
+        setUser(userWithProfile);
+        return userWithProfile;
+      } else if (error) {
+        console.error("Failed to fetch user profile:", error);
+        setUser(null);
+        return null;
+      }
+    } catch (err) {
+      console.error("Error fetching profile:", err);
+      return null;
+    }
+  };
+
   // Check if user is authenticated on mount and setup listener for auth changes
   useEffect(() => {
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
         setSession(currentSession);
         
         if (currentSession?.user) {
-          // Fetch user profile after brief timeout to prevent deadlock
-          setTimeout(async () => {
-            try {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', currentSession.user.id)
-                .single();
-                
-              if (data) {
-                console.log("Profile data fetched:", data);
-                const userWithProfile: User = {
-                  id: currentSession.user.id,
-                  email: currentSession.user.email || '',
-                  name: data.name || '',
-                  role: data.role as UserRole,
-                  balance: data.balance || 0,
-                  createdAt: data.created_at,
-                };
-                setUser(userWithProfile);
-              } else if (error) {
-                console.error("Failed to fetch user profile:", error);
-                setUser(null);
-              }
-            } catch (err) {
-              console.error("Error fetching profile:", err);
-            } finally {
-              setIsLoading(false);
+          setIsLoading(true);
+          try {
+            const userProfile = await fetchUserProfile(currentSession.user.id);
+            if (userProfile) {
+              console.log("User authenticated after state change:", userProfile);
             }
-          }, 0);
+          } finally {
+            setIsLoading(false);
+          }
         } else {
           setUser(null);
           setIsLoading(false);
@@ -78,25 +88,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(currentSession);
         
         if (currentSession?.user) {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', currentSession.user.id)
-            .single();
-          
-          if (data) {
-            console.log("Initial profile data:", data);
-            const userWithProfile: User = {
-              id: currentSession.user.id,
-              email: currentSession.user.email || '',
-              name: data.name || '',
-              role: data.role as UserRole,
-              balance: data.balance || 0,
-              createdAt: data.created_at,
-            };
-            setUser(userWithProfile);
-          } else {
-            console.error("Failed to fetch initial user profile:", error);
+          try {
+            await fetchUserProfile(currentSession.user.id);
+          } catch (err) {
+            console.error("Initial profile fetch error:", err);
             setUser(null);
           }
         }
@@ -124,7 +119,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
-      // Don't manually update here, let the auth listener handle it
+      // Don't need to manually fetch profile here as the auth listener will handle it
       toast({
         title: "Login successful",
         description: `Welcome back!`,
@@ -137,7 +132,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
       throw error;
     } finally {
-      setIsLoading(false);
+      // We'll let the auth state change handler set isLoading to false
     }
   };
 
@@ -223,7 +218,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       value={{
         user,
         isLoading,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!session,
         login,
         register,
         logout,

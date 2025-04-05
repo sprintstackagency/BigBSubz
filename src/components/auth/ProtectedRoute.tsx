@@ -14,6 +14,8 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, isLoading, isAuthenticated } = useAuth();
   
+  console.log("ProtectedRoute - Auth State:", { isAuthenticated, isLoading, user });
+  
   // Show loading state while auth is being checked
   if (isLoading) {
     return (
@@ -36,6 +38,7 @@ const ProtectedRoute = ({
   }
   
   // User is authenticated and has allowed role, render the child routes
+  console.log("User authenticated and authorized, rendering protected content");
   return <Outlet />;
 };
 

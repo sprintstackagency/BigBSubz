@@ -32,10 +32,11 @@ const LoginForm = () => {
 
     try {
       await login(email, password);
-      // Login success - useEffect will handle redirect based on user role
       console.log("Login submitted successfully");
+      // Login success - the auth state change will trigger the useEffect for redirect
     } catch (error: any) {
       setError(error.message || "Failed to login. Please check your credentials.");
+    } finally {
       setFormLoading(false);
     }
   };
