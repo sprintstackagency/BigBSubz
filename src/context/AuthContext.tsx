@@ -124,6 +124,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (error) throw error;
       
+      // Don't manually update here, let the auth listener handle it
       toast({
         title: "Login successful",
         description: `Welcome back!`,

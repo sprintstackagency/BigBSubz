@@ -7,16 +7,17 @@ import LoginForm from "@/components/auth/LoginForm";
 import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (!isLoading && isAuthenticated && user) {
+      console.log("Login page - User authenticated, redirecting to dashboard", user);
       const redirectPath = user.role === "admin" ? "/admin" : "/dashboard";
       navigate(redirectPath, { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, isLoading]);
 
   return (
     <div className="min-h-screen flex flex-col">

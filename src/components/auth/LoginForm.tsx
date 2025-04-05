@@ -11,30 +11,32 @@ import { Loader2 } from "lucide-react";
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState("");
-  const { login, isAuthenticated, user } = useAuth();
+  const { login, isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (!isLoading && isAuthenticated && user) {
+      console.log("LoginForm - User authenticated, redirecting to dashboard", user);
       const redirectPath = user.role === "admin" ? "/admin" : "/dashboard";
       navigate(redirectPath, { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, isLoading]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    setIsLoading(true);
+    setFormLoading(true);
 
     try {
       await login(email, password);
       // Login success - useEffect will handle redirect based on user role
+      console.log("Login submitted successfully");
     } catch (error: any) {
       setError(error.message || "Failed to login. Please check your credentials.");
-      setIsLoading(false);
+      setFormLoading(false);
     }
   };
 
@@ -79,9 +81,9 @@ const LoginForm = () => {
           <Button 
             type="submit" 
             className="w-full bg-primary-purple hover:bg-primary-purple/90"
-            disabled={isLoading}
+            disabled={formLoading}
           >
-            {isLoading ? (
+            {formLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Logging in...

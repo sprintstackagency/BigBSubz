@@ -14,6 +14,7 @@ const ProtectedRoute = ({
 }: ProtectedRouteProps) => {
   const { user, isLoading, isAuthenticated } = useAuth();
   
+  // Show loading state while auth is being checked
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -22,16 +23,19 @@ const ProtectedRoute = ({
     );
   }
   
-  if (!isAuthenticated) {
+  // Redirect if not authenticated
+  if (!isAuthenticated || !user) {
     console.log("User not authenticated. Redirecting to:", redirectPath);
     return <Navigate to={redirectPath} replace />;
   }
   
-  if (user && !allowedRoles.includes(user.role)) {
+  // Check if user has required role
+  if (!allowedRoles.includes(user.role)) {
     console.log("User doesn't have required role. Redirecting to unauthorized.");
     return <Navigate to="/unauthorized" replace />;
   }
   
+  // User is authenticated and has allowed role, render the child routes
   return <Outlet />;
 };
 

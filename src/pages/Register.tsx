@@ -7,16 +7,17 @@ import RegisterForm from "@/components/auth/RegisterForm";
 import { useAuth } from "@/context/AuthContext";
 
 const Register = () => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
   
   // Redirect if already authenticated
   useEffect(() => {
-    if (isAuthenticated && user) {
+    if (!isLoading && isAuthenticated && user) {
+      console.log("Register page - User authenticated, redirecting to dashboard", user);
       const redirectPath = user.role === "admin" ? "/admin" : "/dashboard";
       navigate(redirectPath, { replace: true });
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, isLoading]);
 
   return (
     <div className="min-h-screen flex flex-col">
