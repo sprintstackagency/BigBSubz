@@ -17,11 +17,11 @@ const LoginForm = () => {
   const { login, isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  // Debug auth state when component mounts
+  // Debug auth state when component mounts and when auth state changes
   useEffect(() => {
     debugAuth();
-    console.log("LoginForm mounted, auth state:", { isAuthenticated, isLoading, user });
-  }, []);
+    console.log("LoginForm - Auth state:", { isAuthenticated, isLoading, user });
+  }, [isAuthenticated, isLoading, user]);
 
   // Redirect if already authenticated
   useEffect(() => {

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
@@ -26,6 +27,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
       console.log("Fetching profile for user:", userId);
+      
+      // Use direct query instead of the security definer function
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -47,9 +50,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           balance: data.balance || 0,
           createdAt: data.created_at,
         };
-        setUser(userWithProfile);
+        
+        console.log("Constructed user object:", userWithProfile);
         return userWithProfile;
       }
+      
       return null;
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -57,70 +62,95 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Check if user is authenticated on mount and setup listener for auth changes
+  // Set up auth state listener
   useEffect(() => {
     console.log("Setting up auth state listener");
     let isMounted = true;
     setIsLoading(true);
     
-    // Separate function to handle session changes to avoid infinite loops
-    const handleAuthChange = (currentSession: Session | null) => {
-      if (!isMounted) return;
-      
-      console.log("Auth change handler called with session:", !!currentSession);
-      setSession(currentSession);
-      
-      if (currentSession?.user) {
-        // Use timeout to prevent potential recursion issues
-        setTimeout(() => {
-          if (isMounted) {
-            fetchUserProfile(currentSession.user.id)
-              .catch(error => console.error("Error during profile fetch:", error))
-              .finally(() => isMounted && setIsLoading(false));
-          }
-        }, 0);
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    };
-    
-    // Set up auth state listener first
+    // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, currentSession) => {
+      async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
-        handleAuthChange(currentSession);
         
-        if (event === 'SIGNED_IN') {
-          console.log("User successfully signed in");
-          // Debug auth state
-          debugAuth();
+        if (!isMounted) return;
+        
+        // Update session state immediately
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          try {
+            // Fetch profile data for the authenticated user
+            const profileData = await fetchUserProfile(currentSession.user.id);
+            if (isMounted) {
+              if (profileData) {
+                setUser(profileData);
+              } else {
+                console.error("Could not fetch user profile after auth change");
+                setUser(null);
+              }
+            }
+          } catch (error) {
+            console.error("Error handling auth change:", error);
+            if (isMounted) setUser(null);
+          } finally {
+            if (isMounted) setIsLoading(false);
+          }
+        } else {
+          if (isMounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
         }
       }
     );
 
-    // Then check for existing session
+    // Initial session check
     const checkSession = async () => {
       try {
         console.log("Checking for existing session");
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         console.log("Initial session check:", currentSession?.user?.id);
         
-        handleAuthChange(currentSession);
+        if (!isMounted) return;
         
-        // Debug auth state
-        debugAuth();
+        // Update session state
+        setSession(currentSession);
+        
+        if (currentSession?.user) {
+          try {
+            // Fetch profile for the current session user
+            const profileData = await fetchUserProfile(currentSession.user.id);
+            if (isMounted) {
+              if (profileData) {
+                setUser(profileData);
+              } else {
+                console.error("Could not fetch user profile on initial check");
+                setUser(null);
+              }
+            }
+          } catch (error) {
+            console.error("Error during initial profile fetch:", error);
+            if (isMounted) setUser(null);
+          }
+        } else {
+          if (isMounted) setUser(null);
+        }
       } catch (err) {
         console.error("Session check error:", err);
-        if (isMounted) {
-          setUser(null);
-          setIsLoading(false);
-        }
+        if (isMounted) setUser(null);
+      } finally {
+        if (isMounted) setIsLoading(false);
       }
+      
+      // Log auth state for debugging
+      debugAuth();
     };
     
+    // Run the initial session check
     checkSession();
 
+    // Clean up
     return () => {
       isMounted = false;
       subscription.unsubscribe();
@@ -143,15 +173,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       console.log("Login successful, session:", data.session);
       
-      // Setting session immediately to speed up UI updates
+      // Set session immediately
       setSession(data.session);
       
-      // Fetching profile data immediately after successful login
+      // Fetch profile data after successful login
       if (data.session?.user) {
         const profileData = await fetchUserProfile(data.session.user.id);
         if (!profileData) {
           throw new Error("Could not retrieve user profile after login");
         }
+        
+        // Update user state with profile data
+        setUser(profileData);
       }
       
       toast({

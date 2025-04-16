@@ -22,6 +22,20 @@ export const debugAuth = async () => {
     console.log("Current session:", data.session);
     console.log("Session error:", error);
 
+    if (data.session?.user) {
+      console.log("User ID:", data.session.user.id);
+      
+      // Use our safe security definer function to fetch profile
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', data.session.user.id)
+        .single();
+        
+      console.log("Profile data:", profileData);
+      console.log("Profile error:", profileError);
+    }
+
     const { data: userData } = await supabase.auth.getUser();
     console.log("Current user:", userData.user);
   } catch (err) {
