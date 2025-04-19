@@ -10,8 +10,10 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    storage: localStorage, 
+    storage: localStorage,
     flowType: 'pkce',
+    // Set a shorter session expiry to avoid lingering sessions
+    storageKey: 'bigbsubz-auth-token',
   }
 });
 
@@ -31,11 +33,24 @@ export const debugAuth = async () => {
         
       console.log("Profile data:", profileData);
       console.log("Profile error:", profileError);
+    } else {
+      console.log("No session found or session expired");
     }
 
     const { data: userData } = await supabase.auth.getUser();
     console.log("Current user:", userData.user);
   } catch (err) {
     console.error("Debug auth error:", err);
+  }
+};
+
+// Helper function to clear any potentially corrupted auth state
+export const clearAuthState = () => {
+  try {
+    localStorage.removeItem('bigbsubz-auth-token');
+    localStorage.removeItem('supabase.auth.token');
+    console.log("Auth state cleared");
+  } catch (err) {
+    console.error("Failed to clear auth state:", err);
   }
 };

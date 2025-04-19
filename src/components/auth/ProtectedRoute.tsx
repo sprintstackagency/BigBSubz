@@ -3,7 +3,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import { debugAuth } from "@/integrations/supabase/client";
+import { debugAuth, clearAuthState } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 interface ProtectedRouteProps {
@@ -15,14 +15,24 @@ const ProtectedRoute = ({
   allowedRoles = ["customer", "admin"],
   redirectPath = "/login",
 }: ProtectedRouteProps) => {
-  const { user, isLoading, isAuthenticated } = useAuth();
+  const { user, isLoading, isAuthenticated, refreshSession } = useAuth();
   const [loadingTimeExceeded, setLoadingTimeExceeded] = useState(false);
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
   
   // Debug auth state on mount and when auth state changes
   useEffect(() => {
     debugAuth();
     console.log("ProtectedRoute - Auth State:", { isAuthenticated, isLoading, user, allowedRoles });
-  }, [isAuthenticated, isLoading, user, allowedRoles]);
+    
+    // Auto-attempt one refresh if we have a session but no user
+    if (!isLoading && !isAuthenticated && !refreshAttempted) {
+      console.log("Session exists but not authenticated, attempting auto-refresh");
+      setRefreshAttempted(true);
+      refreshSession().catch(err => {
+        console.error("Auto-refresh failed:", err);
+      });
+    }
+  }, [isAuthenticated, isLoading, user, allowedRoles, refreshAttempted, refreshSession]);
   
   // Set a timeout to detect long loading times
   useEffect(() => {
@@ -42,7 +52,21 @@ const ProtectedRoute = ({
   }, [isLoading]);
   
   // Handle manual refresh
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    try {
+      setLoadingTimeExceeded(false);
+      await refreshSession();
+    } catch (error) {
+      console.error("Manual refresh failed:", error);
+      // If refresh fails, we might need to clear auth state and reload
+      clearAuthState();
+      window.location.reload();
+    }
+  };
+  
+  // Handle full page reload
+  const handleFullReload = () => {
+    clearAuthState();
     window.location.reload();
   };
   
@@ -58,14 +82,24 @@ const ProtectedRoute = ({
               <p className="text-amber-600 text-sm mb-2">
                 Taking longer than expected. Try refreshing.
               </p>
-              <Button 
-                onClick={handleRefresh} 
-                variant="outline"
-                className="flex items-center text-primary-purple border-primary-purple"
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh page
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleRefresh} 
+                  variant="outline"
+                  className="flex items-center text-primary-purple border-primary-purple"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Refresh auth
+                </Button>
+                <Button 
+                  onClick={handleFullReload} 
+                  variant="destructive"
+                  className="flex items-center"
+                >
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Clear & reload
+                </Button>
+              </div>
             </div>
           )}
         </div>

@@ -6,19 +6,29 @@ import Footer from "@/components/Footer";
 import LoginForm from "@/components/auth/LoginForm";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2, RefreshCw } from "lucide-react";
-import { debugAuth } from "@/integrations/supabase/client";
+import { debugAuth, clearAuthState } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 
 const Login = () => {
-  const { isAuthenticated, user, isLoading } = useAuth();
+  const { isAuthenticated, user, isLoading, refreshSession } = useAuth();
   const navigate = useNavigate();
   const [loadingTimeExceeded, setLoadingTimeExceeded] = useState(false);
+  const [refreshAttempted, setRefreshAttempted] = useState(false);
   
   // Debug auth on mount
   useEffect(() => {
     debugAuth();
     console.log("Login page - Auth state:", { isAuthenticated, isLoading, user });
-  }, [isAuthenticated, isLoading, user]);
+    
+    // Auto-attempt one refresh if session exists but not authenticated
+    if (!isLoading && !isAuthenticated && !refreshAttempted) {
+      console.log("Session exists but not authenticated, attempting auto-refresh");
+      setRefreshAttempted(true);
+      refreshSession().catch(err => {
+        console.error("Auto-refresh failed:", err);
+      });
+    }
+  }, [isAuthenticated, isLoading, user, refreshAttempted, refreshSession]);
   
   // Set a timeout to detect long loading times
   useEffect(() => {
@@ -48,7 +58,21 @@ const Login = () => {
   }, [isAuthenticated, user, navigate, isLoading]);
 
   // Handle manual refresh
-  const handleRefresh = () => {
+  const handleRefresh = async () => {
+    try {
+      setLoadingTimeExceeded(false);
+      await refreshSession();
+    } catch (error) {
+      console.error("Manual refresh failed:", error);
+      // If refresh fails, clear auth state and reload
+      clearAuthState();
+      window.location.reload();
+    }
+  };
+  
+  // Handle full page reload with auth state clearing
+  const handleFullReload = () => {
+    clearAuthState();
     window.location.reload();
   };
 
@@ -63,16 +87,26 @@ const Login = () => {
             {loadingTimeExceeded && (
               <div className="mt-4 flex flex-col items-center">
                 <p className="text-amber-600 text-sm mb-2">
-                  Taking longer than expected. Try refreshing.
+                  Taking longer than expected. Try one of these options:
                 </p>
-                <Button 
-                  onClick={handleRefresh} 
-                  variant="outline"
-                  className="flex items-center text-primary-purple border-primary-purple"
-                >
-                  <RefreshCw className="mr-2 h-4 w-4" />
-                  Refresh page
-                </Button>
+                <div className="flex gap-2 mt-2">
+                  <Button 
+                    onClick={handleRefresh} 
+                    variant="outline"
+                    className="flex items-center text-primary-purple border-primary-purple"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Refresh auth
+                  </Button>
+                  <Button 
+                    onClick={handleFullReload} 
+                    variant="destructive"
+                    className="flex items-center"
+                  >
+                    <RefreshCw className="mr-2 h-4 w-4" />
+                    Clear & reload
+                  </Button>
+                </div>
               </div>
             )}
           </div>
