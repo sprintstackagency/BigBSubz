@@ -28,27 +28,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log("Fetching profile for user:", userId);
       
-      // Use direct query instead of the security definer function
+      // Use the security definer function to fetch profile
       const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+        .rpc('get_profile_by_id', { user_id: userId });
         
       if (error) {
         console.error("Failed to fetch user profile:", error);
         return null;
       }
       
-      if (data) {
-        console.log("Profile data fetched successfully:", data);
+      if (data && data.length > 0) {
+        const profileData = data[0];
+        console.log("Profile data fetched successfully:", profileData);
         const userWithProfile: User = {
           id: userId,
           email: session?.user?.email || '',
-          name: data.name || '',
-          role: data.role as UserRole,
-          balance: data.balance || 0,
-          createdAt: data.created_at,
+          name: profileData.name || '',
+          role: profileData.role as UserRole,
+          balance: profileData.balance || 0,
+          createdAt: profileData.created_at,
         };
         
         console.log("Constructed user object:", userWithProfile);
@@ -109,8 +107,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkSession = async () => {
       try {
         console.log("Checking for existing session");
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
         console.log("Initial session check:", currentSession?.user?.id);
+        
+        if (error) {
+          console.error("Session check error:", error);
+          setIsLoading(false);
+          return;
+        }
         
         if (!isMounted) return;
         

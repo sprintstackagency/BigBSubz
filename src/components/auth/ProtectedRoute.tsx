@@ -29,6 +29,12 @@ const ProtectedRoute = ({
         <div className="flex flex-col items-center">
           <Loader2 className="h-8 w-8 animate-spin text-primary-purple mb-4" />
           <p className="text-gray-600">Authenticating...</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 text-primary-purple underline text-sm"
+          >
+            Reload page
+          </button>
         </div>
       </div>
     );

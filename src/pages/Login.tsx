@@ -6,10 +6,17 @@ import Footer from "@/components/Footer";
 import LoginForm from "@/components/auth/LoginForm";
 import { useAuth } from "@/context/AuthContext";
 import { Loader2 } from "lucide-react";
+import { debugAuth } from "@/integrations/supabase/client";
 
 const Login = () => {
   const { isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
+  
+  // Debug auth on mount
+  useEffect(() => {
+    debugAuth();
+    console.log("Login page - Auth state:", { isAuthenticated, isLoading, user });
+  }, [isAuthenticated, isLoading, user]);
   
   // Redirect if already authenticated
   useEffect(() => {
@@ -29,6 +36,12 @@ const Login = () => {
           <div className="flex flex-col items-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary-purple mb-4" />
             <p className="text-gray-600">Loading your account...</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 text-primary-purple underline text-sm"
+            >
+              Reload page
+            </button>
           </div>
         </main>
         <Footer />
