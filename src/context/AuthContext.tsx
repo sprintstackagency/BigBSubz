@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
@@ -40,7 +39,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data && data.length > 0) {
         const profileData = data[0];
         console.log("Profile data fetched successfully:", profileData);
-        const userWithProfile: User = {
+        
+        // Create and return the user object with profile data
+        return {
           id: userId,
           email: session?.user?.email || '',
           name: profileData.name || '',
@@ -48,9 +49,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           balance: profileData.balance || 0,
           createdAt: profileData.created_at,
         };
-        
-        console.log("Constructed user object:", userWithProfile);
-        return userWithProfile;
+      }
+      
+      // If no profile data found but session exists, create basic user
+      if (session?.user) {
+        console.log("No profile found, creating basic user from session");
+        return {
+          id: userId,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.name || '',
+          role: 'customer' as UserRole,
+          balance: 0,
+          createdAt: new Date().toISOString(),
+        };
       }
       
       return null;
@@ -64,6 +75,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     console.log("Setting up auth state listener");
     let isMounted = true;
+    let authTimeout: NodeJS.Timeout | null = null;
     setIsLoading(true);
     
     // Set up auth state listener
@@ -83,16 +95,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (isMounted) {
               if (profileData) {
                 setUser(profileData);
+                setIsLoading(false);
               } else {
                 console.error("Could not fetch user profile after auth change");
                 setUser(null);
+                setIsLoading(false);
               }
             }
           } catch (error) {
             console.error("Error handling auth change:", error);
-            if (isMounted) setUser(null);
-          } finally {
-            if (isMounted) setIsLoading(false);
+            if (isMounted) {
+              setUser(null);
+              setIsLoading(false);
+            }
           }
         } else {
           if (isMounted) {
@@ -112,7 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error("Session check error:", error);
-          setIsLoading(false);
+          if (isMounted) setIsLoading(false);
           return;
         }
         
@@ -136,15 +151,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           } catch (error) {
             console.error("Error during initial profile fetch:", error);
             if (isMounted) setUser(null);
+          } finally {
+            if (isMounted) setIsLoading(false);
           }
         } else {
-          if (isMounted) setUser(null);
+          if (isMounted) {
+            setUser(null);
+            setIsLoading(false);
+          }
         }
       } catch (err) {
         console.error("Session check error:", err);
-        if (isMounted) setUser(null);
-      } finally {
-        if (isMounted) setIsLoading(false);
+        if (isMounted) {
+          setUser(null);
+          setIsLoading(false);
+        }
       }
       
       // Log auth state for debugging
@@ -153,10 +174,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Run the initial session check
     checkSession();
+    
+    // Add a timeout to prevent infinite loading
+    authTimeout = setTimeout(() => {
+      if (isMounted && isLoading) {
+        console.log("Auth timeout reached, forcing load completion");
+        setIsLoading(false);
+      }
+    }, 5000); // 5 second timeout
 
     // Clean up
     return () => {
       isMounted = false;
+      if (authTimeout) clearTimeout(authTimeout);
       subscription.unsubscribe();
     };
   }, []);
