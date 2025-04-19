@@ -27,7 +27,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log("Fetching profile for user:", userId);
       
-      // Use the security definer function to fetch profile
       const { data, error } = await supabase
         .rpc('get_profile_by_id', { user_id: userId });
         
@@ -40,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const profileData = data[0];
         console.log("Profile data fetched successfully:", profileData);
         
-        // Create and return the user object with profile data
         return {
           id: userId,
           email: session?.user?.email || '',
@@ -50,20 +48,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           createdAt: profileData.created_at,
         };
       }
-      
-      // If no profile data found but session exists, create basic user
-      if (session?.user) {
-        console.log("No profile found, creating basic user from session");
-        return {
-          id: userId,
-          email: session.user.email || '',
-          name: session.user.user_metadata?.name || '',
-          role: 'customer' as UserRole,
-          balance: 0,
-          createdAt: new Date().toISOString(),
-        };
-      }
-      
       return null;
     } catch (err) {
       console.error("Error fetching profile:", err);
@@ -74,43 +58,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Set up auth state listener
   useEffect(() => {
     console.log("Setting up auth state listener");
-    let isMounted = true;
-    let authTimeout: NodeJS.Timeout | null = null;
     setIsLoading(true);
-    
+    let mounted = true;
+    let authTimeout: NodeJS.Timeout | null = null;
+
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         console.log("Auth state changed:", event, currentSession?.user?.id);
         
-        if (!isMounted) return;
+        if (!mounted) return;
         
         // Update session state immediately
         setSession(currentSession);
         
         if (currentSession?.user) {
           try {
-            // Fetch profile data for the authenticated user
             const profileData = await fetchUserProfile(currentSession.user.id);
-            if (isMounted) {
+            if (mounted) {
               if (profileData) {
                 setUser(profileData);
-                setIsLoading(false);
               } else {
                 console.error("Could not fetch user profile after auth change");
                 setUser(null);
-                setIsLoading(false);
               }
+              setIsLoading(false);
             }
           } catch (error) {
             console.error("Error handling auth change:", error);
-            if (isMounted) {
+            if (mounted) {
               setUser(null);
               setIsLoading(false);
             }
           }
         } else {
-          if (isMounted) {
+          if (mounted) {
             setUser(null);
             setIsLoading(false);
           }
@@ -119,73 +101,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     // Initial session check
-    const checkSession = async () => {
-      try {
-        console.log("Checking for existing session");
-        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-        console.log("Initial session check:", currentSession?.user?.id);
-        
-        if (error) {
-          console.error("Session check error:", error);
-          if (isMounted) setIsLoading(false);
-          return;
-        }
-        
-        if (!isMounted) return;
-        
-        // Update session state
-        setSession(currentSession);
-        
-        if (currentSession?.user) {
-          try {
-            // Fetch profile for the current session user
-            const profileData = await fetchUserProfile(currentSession.user.id);
-            if (isMounted) {
-              if (profileData) {
-                setUser(profileData);
-              } else {
-                console.error("Could not fetch user profile on initial check");
-                setUser(null);
-              }
-            }
-          } catch (error) {
-            console.error("Error during initial profile fetch:", error);
-            if (isMounted) setUser(null);
-          } finally {
-            if (isMounted) setIsLoading(false);
-          }
-        } else {
-          if (isMounted) {
-            setUser(null);
-            setIsLoading(false);
-          }
-        }
-      } catch (err) {
-        console.error("Session check error:", err);
-        if (isMounted) {
-          setUser(null);
-          setIsLoading(false);
-        }
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      // If no session exists, we can stop loading immediately
+      if (!session) {
+        setSession(null);
+        setUser(null);
+        setIsLoading(false);
+        return;
       }
       
-      // Log auth state for debugging
-      debugAuth();
-    };
-    
-    // Run the initial session check
-    checkSession();
-    
+      // Session exists but will be handled by the listener
+      setSession(session);
+    });
+
     // Add a timeout to prevent infinite loading
     authTimeout = setTimeout(() => {
-      if (isMounted && isLoading) {
+      if (mounted && isLoading) {
         console.log("Auth timeout reached, forcing load completion");
         setIsLoading(false);
       }
     }, 5000); // 5 second timeout
 
-    // Clean up
+    // Cleanup
     return () => {
-      isMounted = false;
+      mounted = false;
       if (authTimeout) clearTimeout(authTimeout);
       subscription.unsubscribe();
     };
