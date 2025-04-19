@@ -1,8 +1,7 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { User, UserRole } from "../types";
 import { useToast } from "@/components/ui/use-toast";
-import { supabase, debugAuth, clearAuthState } from "@/integrations/supabase/client";
+import { supabase, debugAuth } from "@/integrations/supabase/client";
 import { Session } from "@supabase/supabase-js";
 
 interface AuthContextType {
@@ -13,7 +12,6 @@ interface AuthContextType {
   register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => Promise<void>;
   updateUserProfile: (userData: Partial<User>) => Promise<void>;
-  refreshSession: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,11 +20,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [authInitialized, setAuthInitialized] = useState<boolean>(false);
   const { toast } = useToast();
 
-  // Helper function to fetch user profile with error handling and timeouts
-  const fetchUserProfile = async (userId: string, sessionToken?: string): Promise<User | null> => {
+  // Helper function to fetch user profile
+  const fetchUserProfile = async (userId: string): Promise<User | null> => {
     try {
       console.log("Fetching profile for user:", userId);
       
@@ -67,57 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         };
       }
       
-      console.log("No valid profile or session data found");
       return null;
     } catch (err) {
       console.error("Error fetching profile:", err);
       return null;
-    }
-  };
-
-  // Function to refresh the session and user data
-  const refreshSession = async () => {
-    try {
-      setIsLoading(true);
-      
-      // First clear any potentially corrupted state
-      setUser(null);
-      
-      // Get the current session
-      const { data: { session: currentSession }, error } = await supabase.auth.getSession();
-      
-      if (error) {
-        console.error("Session refresh error:", error);
-        throw error;
-      }
-      
-      if (!currentSession) {
-        console.log("No active session found during refresh");
-        setSession(null);
-        setUser(null);
-        setIsLoading(false);
-        return;
-      }
-      
-      console.log("Session refreshed:", currentSession.user.id);
-      setSession(currentSession);
-      
-      // Fetch the user profile with the refreshed session
-      if (currentSession.user) {
-        const profileData = await fetchUserProfile(currentSession.user.id);
-        if (profileData) {
-          setUser(profileData);
-        } else {
-          console.warn("Could not fetch profile during refresh");
-          setUser(null);
-        }
-      }
-    } catch (error) {
-      console.error("Session refresh failed:", error);
-      // If refresh fails, clear auth state to prevent being stuck
-      clearAuthState();
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -126,7 +76,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log("Setting up auth state listener");
     let isMounted = true;
     let authTimeout: NodeJS.Timeout | null = null;
-    let profileFetchTimeout: NodeJS.Timeout | null = null;
     setIsLoading(true);
     
     // Set up auth state listener
@@ -139,30 +88,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Update session state immediately
         setSession(currentSession);
         
-        // Cancel any existing profile fetch timeouts
-        if (profileFetchTimeout) {
-          clearTimeout(profileFetchTimeout);
-        }
-        
         if (currentSession?.user) {
           try {
             // Fetch profile data for the authenticated user
-            // We use setTimeout to avoid deadlock with onAuthStateChange
-            profileFetchTimeout = setTimeout(async () => {
-              if (!isMounted) return;
-              
-              const profileData = await fetchUserProfile(currentSession.user.id);
-              if (isMounted) {
-                if (profileData) {
-                  setUser(profileData);
-                  setIsLoading(false);
-                } else {
-                  console.error("Could not fetch user profile after auth change");
-                  setUser(null);
-                  setIsLoading(false);
-                }
+            const profileData = await fetchUserProfile(currentSession.user.id);
+            if (isMounted) {
+              if (profileData) {
+                setUser(profileData);
+                setIsLoading(false);
+              } else {
+                console.error("Could not fetch user profile after auth change");
+                setUser(null);
+                setIsLoading(false);
               }
-            }, 0);
+            }
           } catch (error) {
             console.error("Error handling auth change:", error);
             if (isMounted) {
@@ -188,10 +127,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (error) {
           console.error("Session check error:", error);
-          if (isMounted) {
-            setIsLoading(false);
-            setAuthInitialized(true);
-          }
+          if (isMounted) setIsLoading(false);
           return;
         }
         
@@ -216,16 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.error("Error during initial profile fetch:", error);
             if (isMounted) setUser(null);
           } finally {
-            if (isMounted) {
-              setIsLoading(false);
-              setAuthInitialized(true);
-            }
+            if (isMounted) setIsLoading(false);
           }
         } else {
           if (isMounted) {
             setUser(null);
             setIsLoading(false);
-            setAuthInitialized(true);
           }
         }
       } catch (err) {
@@ -233,7 +165,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (isMounted) {
           setUser(null);
           setIsLoading(false);
-          setAuthInitialized(true);
         }
       }
       
@@ -249,12 +180,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (isMounted && isLoading) {
         console.log("Auth timeout reached, forcing load completion");
         setIsLoading(false);
-        setAuthInitialized(true);
-        
-        // If we timed out and have a session but no user, try one more refresh
-        if (session && !user) {
-          refreshSession().catch(err => console.error("Final refresh attempt failed:", err));
-        }
       }
     }, 5000); // 5 second timeout
 
@@ -262,7 +187,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       isMounted = false;
       if (authTimeout) clearTimeout(authTimeout);
-      if (profileFetchTimeout) clearTimeout(profileFetchTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -355,9 +279,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       setSession(null);
       
-      // Clear any stored auth state to ensure a clean logout
-      clearAuthState();
-      
       toast({
         title: "Logged out",
         description: "You have been successfully logged out",
@@ -403,8 +324,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isAuthenticated: !!user && !!session, 
     isLoading, 
     user,
-    sessionExists: !!session,
-    authInitialized
+    sessionExists: !!session
   });
 
   return (
@@ -417,7 +337,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         register,
         logout,
         updateUserProfile,
-        refreshSession
       }}
     >
       {children}

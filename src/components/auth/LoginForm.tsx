@@ -6,32 +6,22 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, RefreshCw } from "lucide-react";
-import { debugAuth, clearAuthState } from "@/integrations/supabase/client";
+import { Loader2 } from "lucide-react";
+import { debugAuth } from "@/integrations/supabase/client";
 
 const LoginForm = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [formLoading, setFormLoading] = useState(false);
   const [error, setError] = useState("");
-  const { login, isAuthenticated, user, isLoading, refreshSession } = useAuth();
+  const { login, isAuthenticated, user, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [refreshAttempted, setRefreshAttempted] = useState(false);
 
   // Debug auth state when component mounts and when auth state changes
   useEffect(() => {
     debugAuth();
     console.log("LoginForm - Auth state:", { isAuthenticated, isLoading, user });
-    
-    // Auto-attempt one refresh if session exists but not authenticated
-    if (!isLoading && !isAuthenticated && !refreshAttempted) {
-      console.log("Session exists but not authenticated, attempting auto-refresh");
-      setRefreshAttempted(true);
-      refreshSession().catch(err => {
-        console.error("Auto-refresh failed:", err);
-      });
-    }
-  }, [isAuthenticated, isLoading, user, refreshAttempted, refreshSession]);
+  }, [isAuthenticated, isLoading, user]);
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -61,23 +51,6 @@ const LoginForm = () => {
     } finally {
       setFormLoading(false);
     }
-  };
-  
-  // Handle manual refresh
-  const handleRefresh = async () => {
-    setError("");
-    try {
-      await refreshSession();
-    } catch (error: any) {
-      console.error("Manual refresh failed:", error);
-      setError("Refresh failed: " + (error.message || "Unknown error"));
-    }
-  };
-  
-  // Handle full page reload
-  const handleFullReload = () => {
-    clearAuthState();
-    window.location.reload();
   };
 
   return (
@@ -117,33 +90,7 @@ const LoginForm = () => {
               required
             />
           </div>
-          {error && (
-            <div className="text-red-500 text-sm p-2 bg-red-50 rounded-md">
-              {error}
-              <div className="mt-2 flex gap-2">
-                <Button 
-                  type="button"
-                  onClick={handleRefresh} 
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center text-primary-purple border-primary-purple"
-                >
-                  <RefreshCw className="mr-1 h-3 w-3" />
-                  Refresh
-                </Button>
-                <Button 
-                  type="button"
-                  onClick={handleFullReload} 
-                  variant="destructive"
-                  size="sm"
-                  className="flex items-center"
-                >
-                  <RefreshCw className="mr-1 h-3 w-3" />
-                  Reset
-                </Button>
-              </div>
-            </div>
-          )}
+          {error && <div className="text-red-500 text-sm">{error}</div>}
           <Button 
             type="submit" 
             className="w-full bg-primary-purple hover:bg-primary-purple/90"
